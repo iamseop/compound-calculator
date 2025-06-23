@@ -13,7 +13,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, Calendar, Percent, Repeat2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatInputNumber, parseInputString, formatResultNumber, formatPercentage } from '@/lib/utils'; // Import new helper
 
 interface CalculationStep {
   period: number;
@@ -22,62 +22,6 @@ interface CalculationStep {
   endingBalance: number;
   rateOfReturn: number;
 }
-
-// Helper to parse input string into a number
-const parseInputString = (inputString: string, allowDecimals: boolean = false): number | '' => {
-  if (inputString.trim() === '') {
-    return '';
-  }
-  // Remove commas
-  let cleanedString = inputString.replace(/,/g, '');
-
-  if (!allowDecimals) {
-    // Remove non-digits
-    cleanedString = cleanedString.replace(/\D/g, '');
-    const parsed = parseInt(cleanedString, 10);
-    return isNaN(parsed) ? '' : parsed;
-  } else {
-    // Remove non-digits except one decimal point
-    cleanedString = cleanedString.replace(/[^\d.]/g, '');
-    // Ensure only one decimal point
-    const parts = cleanedString.split('.');
-    if (parts.length > 2) {
-      cleanedString = parts[0] + '.' + parts.slice(1).join('');
-    }
-    const parsed = parseFloat(cleanedString);
-    return isNaN(parsed) ? '' : parsed;
-  }
-};
-
-// Helper to format number with commas and round for results/table
-const formatResultNumber = (amount: number | '' | null): string => {
-   if (amount === '' || amount === null || isNaN(amount)) {
-    return '0';
-  }
-  // Round to 0 decimal places for results and table
-  return new Intl.NumberFormat('ko-KR', {
-    style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-// Helper to format percentage
-const formatPercentage = (percentage: number | null): string => {
-  if (percentage === null || isNaN(percentage)) {
-    return '0.00%';
-  }
-   // Handle Infinity case
-  if (percentage === Infinity) {
-      return '∞%';
-  }
-  return new Intl.NumberFormat('ko-KR', {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(percentage / 100);
-};
-
 
 const SimpleCompoundCalculator: React.FC = () => {
   // State for calculation values (numbers)
@@ -200,30 +144,71 @@ const SimpleCompoundCalculator: React.FC = () => {
   // Update input state and calculation state on change
   const handlePrincipalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const filteredValue = value.replace(/\D/g, '');
-    setPrincipalInput(filteredValue);
-    setPrincipal(parseInputString(filteredValue, false));
+    const oldValue = principalInput; // Use the current state value before update
+    const cursorPosition = e.target.selectionStart ?? 0;
+
+    const cleanedValue = value.replace(/,/g, '');
+    const formattedValue = formatInputNumber(cleanedValue, false); // No decimals
+    const parsedValue = parseInputString(cleanedValue, false); // No decimals
+
+    setPrincipalInput(formattedValue);
+    setPrincipal(parsedValue);
     setPrincipalError(false);
+
+    // Calculate new cursor position
+    const oldCleanedPrefix = oldValue.substring(0, cursorPosition).replace(/,/g, '');
+    const newCursorPosition = formatInputNumber(oldCleanedPrefix, false).length;
+
+
+    requestAnimationFrame(() => {
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+    });
   };
 
   const handleAnnualRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    let filteredValue = value.replace(/[^\d.]/g, '');
-    const parts = filteredValue.split('.');
-    if (parts.length > 2) {
-      filteredValue = parts[0] + '.' + parts.slice(1).join('');
-    }
-    setAnnualRateInput(filteredValue);
-    setAnnualRate(parseInputString(filteredValue, true));
+    const oldValue = annualRateInput; // Use the current state value before update
+    const cursorPosition = e.target.selectionStart ?? 0;
+
+    const cleanedValue = value.replace(/,/g, '');
+    const formattedValue = formatInputNumber(cleanedValue, true); // Allow decimals
+    const parsedValue = parseInputString(cleanedValue, true); // Allow decimals
+
+    setAnnualRateInput(formattedValue);
+    setAnnualRate(parsedValue);
     setAnnualRateError(false);
+
+    // Calculate new cursor position
+    const oldCleanedPrefix = oldValue.substring(0, cursorPosition).replace(/,/g, '');
+    const newCursorPosition = formatInputNumber(oldCleanedPrefix, true).length; // Use allowDecimals=true
+
+
+    requestAnimationFrame(() => {
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+    });
   };
 
   const handleYearsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const filteredValue = value.replace(/\D/g, '');
-    setYearsInput(filteredValue);
-    setYears(parseInputString(filteredValue, false));
+    const oldValue = yearsInput; // Use the current state value before update
+    const cursorPosition = e.target.selectionStart ?? 0;
+
+    const cleanedValue = value.replace(/,/g, '');
+    const formattedValue = formatInputNumber(cleanedValue, false); // No decimals
+    const parsedValue = parseInputString(cleanedValue, false); // No decimals
+
+    setYearsInput(formattedValue);
+    setYears(parsedValue);
     setYearsError(false);
+
+    // Calculate new cursor position
+    const oldCleanedPrefix = oldValue.substring(0, cursorPosition).replace(/,/g, '');
+    const newCursorPosition = formatInputNumber(oldCleanedPrefix, false).length;
+
+
+    requestAnimationFrame(() => {
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+    });
   };
 
 
