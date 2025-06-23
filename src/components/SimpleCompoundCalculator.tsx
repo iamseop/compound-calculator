@@ -28,27 +28,31 @@ const SimpleCompoundCalculator: React.FC = () => {
   const [principal, setPrincipal] = useState<number | ''>('');
   const [annualRate, setAnnualRate] = useState<number | ''>('');
   const [years, setYears] = useState<number | ''>('');
+  // Removed additionalContribution state
   const [frequency, setFrequency] = useState<string>('annually');
 
   // State for input display values (strings with commas)
   const [principalInput, setPrincipalInput] = useState<string>('');
   const [annualRateInput, setAnnualRateInput] = useState<string>('');
   const [yearsInput, setYearsInput] = useState<string>('');
+  // Removed additionalContributionInput state
 
   // State for validation errors
   const [principalError, setPrincipalError] = useState<boolean>(false);
   const [annualRateError, setAnnualRateError] = useState<boolean>(false);
   const [yearsError, setYearsError] = useState<boolean>(false);
+  // Removed additionalContributionError state
 
   const [result, setResult] = useState<number | null>(null);
   const [overallRateOfReturn, setOverallRateOfReturn] = useState<number | null>(null);
   const [steps, setSteps] = useState<CalculationStep[]>([]);
 
-  const calculateSimpleCompoundInterest = () => {
+  const calculateCompoundInterest = () => {
     // Reset errors
     setPrincipalError(false);
     setAnnualRateError(false);
     setYearsError(false);
+    // Removed additionalContributionError reset
 
     let hasError = false;
 
@@ -77,6 +81,7 @@ const SimpleCompoundCalculator: React.FC = () => {
     const p = Number(principal);
     const r = Number(annualRate) / 100;
     const t = Number(years);
+    // Removed const c = Number(additionalContribution);
 
     let n: number; // Compounding frequency per year
 
@@ -97,7 +102,9 @@ const SimpleCompoundCalculator: React.FC = () => {
     for (let i = 1; i <= totalPeriods; i++) {
       const startingBalance = currentBalance;
       const interestEarned = startingBalance * ratePerPeriod;
-      const endingBalance = startingBalance + interestEarned;
+      // Removed currentContribution logic
+
+      const endingBalance = startingBalance + interestEarned; // Removed adding contribution
 
        // Calculate cumulative rate of return relative to the initial principal (p)
       let rateOfReturn = 0;
@@ -111,10 +118,12 @@ const SimpleCompoundCalculator: React.FC = () => {
           rateOfReturn = 0;
       }
 
+
       calculationSteps.push({
         period: i,
         startingBalance: startingBalance,
         interestEarned: interestEarned,
+        // Removed additionalContribution property
         endingBalance: endingBalance,
         rateOfReturn: rateOfReturn,
       });
@@ -124,15 +133,18 @@ const SimpleCompoundCalculator: React.FC = () => {
 
     setResult(currentBalance);
 
+    // Calculate overall return based on total invested (principal)
     let overallReturn = 0;
     const totalGainRelativeToPrincipal = currentBalance - p;
     if (p > 0) {
         overallReturn = (totalGainRelativeToPrincipal / p) * 100;
     } else if (p === 0 && totalGainRelativeToPrincipal > 0) {
-        overallReturn = Infinity;
-    } else {
+         overallReturn = Infinity;
+    }
+    else {
         overallReturn = 0;
     }
+
     setOverallRateOfReturn(overallReturn);
 
     setSteps(calculationSteps);
@@ -187,11 +199,23 @@ const SimpleCompoundCalculator: React.FC = () => {
     });
   };
 
+  // Removed handleAdditionalContributionChange
+
+  // Helper to determine mobile font size based on text length
+  const getMobileFontSizeClass = (text: string | number | null, baseSizeClass: string, longTextSizeClass: string, threshold: number = 10): string => {
+      if (text === null || text === '' || typeof text === 'number' && isNaN(text)) {
+          return baseSizeClass;
+      }
+      const formattedText = typeof text === 'number' ? text.toLocaleString('ko-KR') : String(text);
+      return formattedText.length > threshold ? longTextSizeClass : baseSizeClass;
+  };
+
+
   return (
     <div className="container mx-auto p-4 max-w-3xl">
       <Card className="bg-surface text-text rounded-xl shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-text">복리 계산기</CardTitle>
+          <CardTitle className="text-2xl font-bold text-text">복리 계산기</CardTitle> {/* Title remains "복리 계산기" */}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -210,7 +234,7 @@ const SimpleCompoundCalculator: React.FC = () => {
                     principalError ? 'border-warning' : 'border-border'
                   )}
                 />
-                 {principalError && <p className="error-message-text text-sm mt-1 font-light">숫자를 입력해 주세요.</p>}
+                {principalError && <p className="error-message-text text-sm mt-1 font-light">숫자를 입력해 주세요.</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="annualRate" className="text-text flex items-center"><Percent className="mr-2 h-4 w-4" /> 연 이자율 (%)</Label>
@@ -260,9 +284,13 @@ const SimpleCompoundCalculator: React.FC = () => {
                 </Select>
               </div>
             </div>
+             {/* Removed the second column containing Additional Contribution */}
+             <div className="space-y-4">
+                {/* This column is now empty or can be removed if no other elements are added here */}
+             </div>
           </div>
 
-          <Button onClick={calculateSimpleCompoundInterest} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+          <Button onClick={calculateCompoundInterest} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
             계산하기
           </Button>
 
@@ -275,38 +303,76 @@ const SimpleCompoundCalculator: React.FC = () => {
                 <p>총 수익률: <span className="font-bold text-text">{formatPercentage(overallRateOfReturn)}</span></p>
               </div>
 
-              {steps.length > 0 && (
-                <>
-                  <Separator className="bg-border" />
-                  <h3 className="text-xl font-semibold text-primary-light">계산 과정</h3>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-border">
-                          <TableHead className={cn("text-text", "text-xs sm:text-sm", "whitespace-nowrap")}>주기</TableHead>
-                          <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>시작 금액</TableHead>
-                          <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>수익</TableHead>
-                          <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>종료 금액</TableHead>
-                          <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>수익률 (%)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {steps.map((step, index) => (
-                          <TableRow key={index} className="border-border">
-                            <TableCell className={cn("font-medium text-text", "whitespace-normal", "overflow-wrap-break-word")}>
-                               {`${step.period}${frequency === 'annually' ? '년차' : frequency === 'semiannually' ? '반년차' : frequency === 'quarterly' ? '분기차' : frequency === 'monthly' ? '개월차' : '일차'}`}
-                            </TableCell>
-                            <TableCell className={cn("text-right text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatResultNumber(step.startingBalance)}</TableCell>
-                            <TableCell className={cn("text-right text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatResultNumber(step.interestEarned)}</TableCell>
-                            <TableCell className={cn("text-right font-bold text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatResultNumber(step.endingBalance)}</TableCell>
-                            <TableCell className={cn("text-right text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatPercentage(step.rateOfReturn)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </>
-              )}
+              <Separator className="bg-border" />
+              <h3 className="text-xl font-semibold text-primary-light">계산 과정</h3>
+              <div className="">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border">
+                      {/* 주기: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-text", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>주기</TableHead>
+                      {/* 시작 금액: 모바일에서 숨김 */}
+                      <TableHead className={cn("text-text text-right hidden sm:table-cell", "text-xs sm:text-sm", "break-words")}>시작 금액</TableHead>
+                      {/* 수익: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-text text-right", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>수익</TableHead>
+                       {/* Removed Additional Contribution Header */}
+                      {/* 종료 금액: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-right font-bold text-text", "text-[9px] font-light sm:text-sm sm:font-bold", "whitespace-nowrap")}>종료 금액</TableHead>
+                      {/* 수익률 (%): 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-right text-text", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>수익률 (%)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {steps.map((step, index) => (
+                      <TableRow key={index} className="border-border">
+                        {/* 주기: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell className={cn("font-medium text-text", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>
+                           {`${step.period}${frequency === 'annually' ? '년차' : frequency === 'semiannually' ? '반년차' : frequency === 'quarterly' ? '분기차' : frequency === 'monthly' ? '개월차' : '일차'}`}
+                        </TableCell>
+                        {/* 시작 금액: 모바일에서 숨김 */}
+                        <TableCell className={cn("text-right text-text hidden sm:table-cell", "text-xs sm:text-sm", "break-words")}>{formatResultNumber(step.startingBalance)}</TableCell>
+                        {/* 수익: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell
+                          className={cn(
+                            "text-right text-text",
+                            "whitespace-nowrap",
+                            // Dynamically adjust font size on mobile based on text length
+                            getMobileFontSizeClass(step.interestEarned, "text-[9px]", "text-[8px]", 10),
+                            "font-light sm:text-sm sm:font-normal"
+                          )}
+                        >
+                          {formatResultNumber(step.interestEarned)}
+                        </TableCell>
+                        {/* Removed Additional Contribution Cell */}
+                        {/* 종료 금액: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell
+                          className={cn(
+                            "text-right font-bold text-text",
+                            "whitespace-nowrap",
+                             // Dynamically adjust font size on mobile based on text length
+                            getMobileFontSizeClass(step.endingBalance, "text-[9px]", "text-[8px]", 10),
+                            "font-light sm:text-sm sm:font-bold"
+                          )}
+                        >
+                          {formatResultNumber(step.endingBalance)}
+                        </TableCell>
+                        {/* 수익률 (%): 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell
+                          className={cn(
+                            "text-right text-text",
+                            "whitespace-nowrap",
+                             // Dynamically adjust font size on mobile based on text length
+                            getMobileFontSizeClass(step.rateOfReturn, "text-[9px]", "text-[8px]", 10),
+                            "font-light sm:text-sm sm:font-normal"
+                          )}
+                        >
+                          {formatPercentage(step.rateOfReturn)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>

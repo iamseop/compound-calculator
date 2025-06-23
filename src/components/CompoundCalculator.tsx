@@ -12,16 +12,16 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Calendar, Percent, Repeat2 } from 'lucide-react';
+import { DollarSign, Calendar, Percent, Repeat2, PlusCircle } from 'lucide-react'; // Added PlusCircle icon
 import { cn, formatInputNumber, parseInputString, formatResultNumber, formatPercentage } from '@/lib/utils';
 
 interface CalculationStep {
   period: number;
   startingBalance: number;
+  additionalContribution: number; // Added additionalContribution property back
   interestEarned: number;
-  additionalContribution: number;
   endingBalance: number;
-  rateOfReturn: number;
+  rateOfReturn: number; // Rate of return relative to initial principal + total contributions
 }
 
 const CompoundCalculator: React.FC = () => {
@@ -29,20 +29,20 @@ const CompoundCalculator: React.FC = () => {
   const [principal, setPrincipal] = useState<number | ''>('');
   const [annualRate, setAnnualRate] = useState<number | ''>('');
   const [years, setYears] = useState<number | ''>('');
-  const [additionalContribution, setAdditionalContribution] = useState<number | ''>('');
+  const [additionalContribution, setAdditionalContribution] = useState<number | ''>(''); // Added additionalContribution state
   const [frequency, setFrequency] = useState<string>('annually');
 
   // State for input display values (strings with commas)
   const [principalInput, setPrincipalInput] = useState<string>('');
   const [annualRateInput, setAnnualRateInput] = useState<string>('');
   const [yearsInput, setYearsInput] = useState<string>('');
-  const [additionalContributionInput, setAdditionalContributionInput] = useState<string>('');
+  const [additionalContributionInput, setAdditionalContributionInput] = useState<string>(''); // Added additionalContributionInput state
 
   // State for validation errors
   const [principalError, setPrincipalError] = useState<boolean>(false);
   const [annualRateError, setAnnualRateError] = useState<boolean>(false);
   const [yearsError, setYearsError] = useState<boolean>(false);
-  const [additionalContributionError, setAdditionalContributionError] = useState<boolean>(false);
+  const [additionalContributionError, setAdditionalContributionError] = useState<boolean>(false); // Added additionalContributionError state
 
   const [result, setResult] = useState<number | null>(null);
   const [overallRateOfReturn, setOverallRateOfReturn] = useState<number | null>(null);
@@ -53,7 +53,7 @@ const CompoundCalculator: React.FC = () => {
     setPrincipalError(false);
     setAnnualRateError(false);
     setYearsError(false);
-    setAdditionalContributionError(false);
+    setAdditionalContributionError(false); // Reset additionalContributionError
 
     let hasError = false;
 
@@ -70,6 +70,11 @@ const CompoundCalculator: React.FC = () => {
       setYearsError(true);
       hasError = true;
     }
+     if (additionalContribution === '') { // Validate additionalContribution
+      setAdditionalContributionError(true);
+      hasError = true;
+    }
+
 
     if (hasError) {
       setResult(null);
@@ -82,7 +87,7 @@ const CompoundCalculator: React.FC = () => {
     const p = Number(principal);
     const r = Number(annualRate) / 100;
     const t = Number(years);
-    const c = Number(additionalContribution);
+    const annualContribution = Number(additionalContribution); // Use annual contribution
 
     let n: number; // Compounding frequency per year
 
@@ -95,34 +100,38 @@ const CompoundCalculator: React.FC = () => {
       default: n = 1;
     }
 
+    const contributionPerPeriod = annualContribution / n; // Contribution amount per compounding period
+    const ratePerPeriod = r / n;
+    const totalPeriods = t * n;
+
     let currentBalance = p;
     const calculationSteps: CalculationStep[] = [];
-    const totalPeriods = t * n;
-    const ratePerPeriod = r / n;
 
     for (let i = 1; i <= totalPeriods; i++) {
-      const startingBalance = currentBalance;
-      const interestEarned = startingBalance * ratePerPeriod;
-      const currentContribution = c > 0 ? c : 0;
+      const startingBalanceForPeriod = currentBalance;
+      const balanceAfterContribution = startingBalanceForPeriod + contributionPerPeriod; // Add contribution at the beginning of the period
+      const interestEarned = balanceAfterContribution * ratePerPeriod;
+      const endingBalance = balanceAfterContribution + interestEarned;
 
-      const endingBalance = startingBalance + interestEarned + currentContribution;
-
+      // Calculate rate of return relative to total invested up to this point
+      const totalInvestedUpToPeriod = p + (contributionPerPeriod * i);
       let rateOfReturn = 0;
-      const cumulativeGainRelativeToPrincipal = endingBalance - p;
+      const cumulativeGain = endingBalance - totalInvestedUpToPeriod;
 
-      if (p > 0) {
-          rateOfReturn = (cumulativeGainRelativeToPrincipal / p) * 100;
-      } else if (p === 0 && cumulativeGainRelativeToPrincipal > 0) {
-          rateOfReturn = Infinity;
+      if (totalInvestedUpToPeriod > 0) {
+          rateOfReturn = (cumulativeGain / totalInvestedUpToPeriod) * 100;
+      } else if (totalInvestedUpToPeriod === 0 && cumulativeGain > 0) {
+          rateOfReturn = Infinity; // Handle case where total invested is 0 but there's a gain
       } else {
-          rateOfReturn = 0;
+          rateOfReturn = 0; // Handle case where total invested is 0 and no gain
       }
+
 
       calculationSteps.push({
         period: i,
-        startingBalance: startingBalance,
+        startingBalance: startingBalanceForPeriod,
+        additionalContribution: contributionPerPeriod, // Store contribution per period
         interestEarned: interestEarned,
-        additionalContribution: currentContribution,
         endingBalance: endingBalance,
         rateOfReturn: rateOfReturn,
       });
@@ -132,15 +141,20 @@ const CompoundCalculator: React.FC = () => {
 
     setResult(currentBalance);
 
+    // Calculate overall return based on total invested (principal + total contributions)
+    const totalInvested = p + (annualContribution * t);
     let overallReturn = 0;
-    const totalGainRelativeToPrincipal = currentBalance - p;
-    if (p > 0) {
-        overallReturn = (totalGainRelativeToPrincipal / p) * 100;
-    } else if (p === 0 && totalGainRelativeToPrincipal > 0) {
-        overallReturn = Infinity;
-    } else {
-        overallReturn = 0;
+    const totalGain = currentBalance - totalInvested;
+
+    if (totalInvested > 0) {
+        overallReturn = (totalGain / totalInvested) * 100;
+    } else if (totalInvested === 0 && totalGain > 0) {
+         overallReturn = Infinity; // Handle case where total invested is 0 but there's a gain
     }
+    else {
+        overallReturn = 0; // Handle case where total invested is 0 and no gain
+    }
+
     setOverallRateOfReturn(overallReturn);
 
     setSteps(calculationSteps);
@@ -211,11 +225,22 @@ const CompoundCalculator: React.FC = () => {
     });
   };
 
+
+  // Helper to determine mobile font size based on text length
+  const getMobileFontSizeClass = (text: string | number | null, baseSizeClass: string, longTextSizeClass: string, threshold: number = 10): string => {
+      if (text === null || text === '' || typeof text === 'number' && isNaN(text)) {
+          return baseSizeClass;
+      }
+      const formattedText = typeof text === 'number' ? text.toLocaleString('ko-KR') : String(text);
+      return formattedText.length > threshold ? longTextSizeClass : baseSizeClass;
+  };
+
+
   return (
     <div className="container mx-auto p-4 max-w-3xl">
       <Card className="bg-surface text-text rounded-xl shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-text">적립식 복리 계산기</CardTitle>
+          <CardTitle className="text-2xl font-bold text-text">적립식 복리 계산기</CardTitle> {/* Updated Title */}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -284,23 +309,27 @@ const CompoundCalculator: React.FC = () => {
                 </Select>
               </div>
             </div>
-            <div className="space-y-4">
-               <div className="space-y-2">
-                <Label htmlFor="additionalContribution" className="text-text flex items-center"><DollarSign className="mr-2 h-4 w-4" /> 추가 투자 금액</Label>
-                <Input
-                  id="additionalContribution"
-                  type="text"
-                  placeholder="예: 100,000"
-                  value={additionalContributionInput}
-                  onChange={handleAdditionalContributionChange}
-                   className={cn(
-                    'bg-background text-text focus:ring-ring rounded-md',
-                    additionalContributionError && 'is-error',
-                    additionalContributionError ? 'border-warning' : 'border-border'
-                  )}
-                />
-              </div>
-            </div>
+             <div className="space-y-4">
+                {/* Added Additional Contribution field back */}
+                <div className="space-y-2">
+                    {/* Removed "(연간)" from the label */}
+                    <Label htmlFor="additionalContribution" className="text-text flex items-center"><PlusCircle className="mr-2 h-4 w-4" /> 추가 투자 금액</Label>
+                    <Input
+                      id="additionalContribution"
+                      type="text"
+                      placeholder="예: 100,000"
+                      value={additionalContributionInput}
+                      onChange={handleAdditionalContributionChange}
+                      className={cn(
+                        'bg-background text-text focus:ring-ring rounded-md',
+                        additionalContributionError && 'is-error',
+                        additionalContributionError ? 'border-warning' : 'border-border'
+                      )}
+                    />
+                    {additionalContributionError && <p className="error-message-text text-sm mt-1 font-light">숫자를 입력해 주세요.</p>}
+                </div>
+                {/* Placeholder for potential future elements in the second column */}
+             </div>
           </div>
 
           <Button onClick={calculateCompoundInterest} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
@@ -318,29 +347,81 @@ const CompoundCalculator: React.FC = () => {
 
               <Separator className="bg-border" />
               <h3 className="text-xl font-semibold text-primary-light">계산 과정</h3>
-              <div className="overflow-x-auto">
+              <div className="">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border">
-                      <TableHead className={cn("text-text", "text-xs sm:text-sm", "whitespace-nowrap")}>주기</TableHead>
-                      <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>시작 금액</TableHead>
-                      <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>수익</TableHead>
-                      <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>추가 투자</TableHead>
-                      <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>종료 금액</TableHead>
-                      <TableHead className={cn("text-text text-right", "text-xs sm:text-sm", "whitespace-nowrap")}>수익률 (%)</TableHead>
+                      {/* 주기: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-text", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>주기</TableHead>
+                      {/* 시작 금액: 모바일에서 숨김 */}
+                      <TableHead className={cn("text-text text-right hidden sm:table-cell", "text-xs sm:text-sm", "break-words")}>시작 금액</TableHead>
+                       {/* 추가 투자 금액 헤더 추가 */}
+                      <TableHead className={cn("text-text text-right", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>추가 투자</TableHead>
+                      {/* 수익: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-text text-right", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>수익</TableHead>
+                      {/* 종료 금액: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-right font-bold text-text", "text-[9px] font-light sm:text-sm sm:font-bold", "whitespace-nowrap")}>종료 금액</TableHead>
+                      {/* 수익률 (%): 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                      <TableHead className={cn("text-right text-text", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>수익률 (%)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {steps.map((step, index) => (
                       <TableRow key={index} className="border-border">
-                        <TableCell className={cn("font-medium text-text", "whitespace-normal", "overflow-wrap-break-word")}>
+                        {/* 주기: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell className={cn("font-medium text-text", "text-[9px] font-light sm:text-sm sm:font-medium", "whitespace-nowrap")}>
                            {`${step.period}${frequency === 'annually' ? '년차' : frequency === 'semiannually' ? '반년차' : frequency === 'quarterly' ? '분기차' : frequency === 'monthly' ? '개월차' : '일차'}`}
                         </TableCell>
-                        <TableCell className={cn("text-right text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatResultNumber(step.startingBalance)}</TableCell>
-                        <TableCell className={cn("text-right text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatResultNumber(step.interestEarned)}</TableCell>
-                        <TableCell className={cn("text-right text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatResultNumber(step.additionalContribution)}</TableCell>
-                        <TableCell className={cn("text-right font-bold text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatResultNumber(step.endingBalance)}</TableCell>
-                        <TableCell className={cn("text-right text-text", "whitespace-normal", "overflow-wrap-break-word")}>{formatPercentage(step.rateOfReturn)}</TableCell>
+                        {/* 시작 금액: 모바일에서 숨김 */}
+                        <TableCell className={cn("text-right text-text hidden sm:table-cell", "text-xs sm:text-sm", "break-words")}>{formatResultNumber(step.startingBalance)}</TableCell>
+                         {/* 추가 투자 금액 셀 추가 */}
+                         <TableCell
+                          className={cn(
+                            "text-right text-text",
+                            "whitespace-nowrap",
+                            // Dynamically adjust font size on mobile based on text length
+                            getMobileFontSizeClass(step.additionalContribution, "text-[9px]", "text-[8px]", 10),
+                            "font-light sm:text-sm sm:font-normal"
+                          )}
+                        >
+                          {formatResultNumber(step.additionalContribution)}
+                        </TableCell>
+                        {/* 수익: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell
+                          className={cn(
+                            "text-right text-text",
+                            "whitespace-nowrap",
+                            // Dynamically adjust font size on mobile based on text length
+                            getMobileFontSizeClass(step.interestEarned, "text-[9px]", "text-[8px]", 10),
+                            "font-light sm:text-sm sm:font-normal"
+                          )}
+                        >
+                          {formatResultNumber(step.interestEarned)}
+                        </TableCell>
+                        {/* 종료 금액: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell
+                          className={cn(
+                            "text-right font-bold text-text",
+                            "whitespace-nowrap",
+                             // Dynamically adjust font size on mobile based on text length
+                            getMobileFontSizeClass(step.endingBalance, "text-[9px]", "text-[8px]", 10),
+                            "font-light sm:text-sm sm:font-bold"
+                          )}
+                        >
+                          {formatResultNumber(step.endingBalance)}
+                        </TableCell>
+                        {/* 수익률 (%): 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
+                        <TableCell
+                          className={cn(
+                            "text-right text-text",
+                            "whitespace-nowrap",
+                             // Dynamically adjust font size on mobile based on text length
+                            getMobileFontSizeClass(step.rateOfReturn, "text-[9px]", "text-[8px]", 10),
+                            "font-light sm:text-sm sm:font-normal"
+                          )}
+                        >
+                          {formatPercentage(step.rateOfReturn)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
