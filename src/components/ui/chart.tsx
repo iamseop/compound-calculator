@@ -3,6 +3,11 @@ import * as RechartsPrimitive from 'recharts';
 // Removed unused imports: NameType, Payload, ValueType
 
 import { cn } from '@/lib/utils';
+import clsx, { ClassValue } from 'clsx';
+
+export function cn(...inputs: ClassValue[]) {
+  return clsx(...inputs);
+}
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
