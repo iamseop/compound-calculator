@@ -341,7 +341,7 @@ const CompoundCalculator: React.FC = () => {
               <Separator className="bg-border" />
               <h3 className="text-xl font-semibold text-primary-light">계산 결과</h3>
               <div className="text-lg text-text">
-                <p>최종 금액: <span className="font-bold text-text">{formatResultNumber(result)}</span></p>
+                <p>최종 금액: <span className="font-bold text-text">{formatResultNumber(result, false)}</span></p>
                 <p>총 수익률: <span className="font-bold text-text">{formatPercentage(overallRateOfReturn)}</span></p>
               </div>
 
@@ -373,7 +373,7 @@ const CompoundCalculator: React.FC = () => {
                            {`${step.period}${frequency === 'annually' ? '년차' : frequency === 'semiannually' ? '반년차' : frequency === 'quarterly' ? '분기차' : frequency === 'monthly' ? '개월차' : '일차'}`}
                         </TableCell>
                         {/* 시작 금액: 모바일에서 숨김 */}
-                        <TableCell className={cn("text-right text-text hidden sm:table-cell", "text-xs sm:text-sm", "break-words")}>{formatResultNumber(step.startingBalance)}</TableCell>
+                        <TableCell className={cn("text-right text-text hidden sm:table-cell", "text-xs sm:text-sm", "break-words")}>{formatResultNumber(step.startingBalance, false)}</TableCell>
                          {/* 추가 투자 금액 셀 추가 */}
                          <TableCell
                           className={cn(
@@ -384,7 +384,7 @@ const CompoundCalculator: React.FC = () => {
                             "font-light sm:text-sm sm:font-normal"
                           )}
                         >
-                          {formatResultNumber(step.additionalContribution)}
+                          {formatResultNumber(step.additionalContribution, false)}
                         </TableCell>
                         {/* 수익: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
                         <TableCell
@@ -396,7 +396,7 @@ const CompoundCalculator: React.FC = () => {
                             "font-light sm:text-sm sm:font-normal"
                           )}
                         >
-                          {formatResultNumber(step.interestEarned)}
+                          {formatResultNumber(step.interestEarned, false)}
                         </TableCell>
                         {/* 종료 금액: 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
                         <TableCell
@@ -408,7 +408,7 @@ const CompoundCalculator: React.FC = () => {
                             "font-light sm:text-sm sm:font-bold"
                           )}
                         >
-                          {formatResultNumber(step.endingBalance)}
+                          {formatResultNumber(step.endingBalance, false)}
                         </TableCell>
                         {/* 수익률 (%): 모바일에서 글자 작고 얇게, 줄바꿈 방지 */}
                         <TableCell
