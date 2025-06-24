@@ -6,12 +6,10 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  // Removed overflow-auto from this wrapper div
-  <div className="relative w-full">
+  <div className="relative w-full overflow-auto">
     <table
       ref={ref}
-      // Added table-layout-fixed to help control column widths and wrapping
-      className={cn('w-full caption-bottom text-sm table-fixed', className)}
+      className={cn('w-full caption-bottom text-sm', className)}
       {...props}
     />
   </div>
