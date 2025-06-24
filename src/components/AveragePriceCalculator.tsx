@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Tag, PlusCircle, Trash2 } from 'lucide-react'; // Added icons
+import { DollarSign, Tag, PlusCircle, Trash2 } from 'lucide-react';
 import { cn, formatInputNumber, parseInputString, formatResultNumber } from '@/lib/utils';
 
 interface PurchaseEntry {
@@ -63,17 +63,15 @@ const AveragePriceCalculator: React.FC = () => {
   const calculateAveragePrice = () => {
     let hasError = false;
     let updatedEntries = purchaseEntries.map(entry => {
-      let entryError = false;
+      // Removed unused entryError variable
       if (entry.amount === '' || entry.amount === null || isNaN(Number(entry.amount))) {
         entry.amountError = true;
-        entryError = true;
         hasError = true;
       } else {
          entry.amountError = false;
       }
       if (entry.price === '' || entry.price === null || isNaN(Number(entry.price)) || Number(entry.price) <= 0) {
         entry.priceError = true;
-        entryError = true;
         hasError = true;
       } else {
          entry.priceError = false;
@@ -101,27 +99,17 @@ const AveragePriceCalculator: React.FC = () => {
       if (amount > 0 && price > 0) {
          totalInvestment += amount;
          totalQuantity += amount / price;
-      } else if (amount > 0 && price === 0) {
-          // Handle case where amount is positive but price is zero - this is an error state already caught by validation
       }
-       // If amount is 0, it doesn't contribute to total investment or quantity
     });
-
 
     let averagePrice = 0;
     if (totalQuantity > 0) {
       averagePrice = totalInvestment / totalQuantity;
     } else if (totalInvestment > 0 && totalQuantity === 0) {
-       // This case should ideally not happen if amount > 0 and price > 0 are checked,
-       // but as a fallback, indicate an issue or infinite price if amount > 0 and quantity is somehow 0.
-       // Given the logic (amount/price), quantity will be > 0 if amount > 0 and price > 0.
-       // If totalInvestment > 0 but totalQuantity is 0, it implies all entries had amount > 0 but price <= 0,
-       // which is caught by validation.
-       averagePrice = Infinity; // Or handle as an error
+       averagePrice = Infinity;
     } else {
-       averagePrice = 0; // Total investment and total quantity are 0
+       averagePrice = 0;
     }
-
 
     setResult({
       totalInvestment,
@@ -215,10 +203,12 @@ const AveragePriceCalculator: React.FC = () => {
               <Separator className="bg-border" />
               <h3 className="text-xl font-semibold text-primary-light">계산 결과</h3>
               <div className="text-lg text-text">
-                <p>총 투자 금액: <span className="font-bold text-text">{formatResultNumber(result.totalInvestment)}</span></p>
+                {/* totalInvestment는 소수점 없이 표시 */}
+                <p>총 투자 금액: <span className="font-bold text-text">{formatResultNumber(result.totalInvestment, false)}</span></p>
                 {/* 총 수량 표시 수정: formatResultNumber 대신 toLocaleString 사용 */}
                 <p>총 수량: <span className="font-bold text-text">{result.totalQuantity.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}개</span></p>
-                <p>평균 매수 단가: <span className="font-bold text-text">{formatResultNumber(result.averagePrice, true)}</span></p> {/* Allow decimals for price */}
+                {/* averagePrice는 소수점 허용하여 표시 */}
+                <p>평균 매수 단가: <span className="font-bold text-text">{formatResultNumber(result.averagePrice, true)}</span></p>
               </div>
 
               {/* Optional: Display a summary table of entries */}
@@ -250,7 +240,8 @@ const AveragePriceCalculator: React.FC = () => {
                                         "font-light sm:text-sm sm:font-normal"
                                     )}
                                 >
-                                    {formatResultNumber(Number(entry.amount))}
+                                    {/* entry.amount는 소수점 없이 표시 */}
+                                    {formatResultNumber(Number(entry.amount), false)}
                                 </TableCell>
                                 <TableCell
                                     className={cn(
@@ -260,6 +251,7 @@ const AveragePriceCalculator: React.FC = () => {
                                         "font-light sm:text-sm sm:font-normal"
                                     )}
                                 >
+                                    {/* entry.price는 소수점 허용하여 표시 */}
                                     {formatResultNumber(Number(entry.price), true)}
                                 </TableCell>
                                 {/* 매수 내역 요약 테이블 수량 표시 수정: formatResultNumber 대신 toLocaleString 사용 */}
