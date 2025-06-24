@@ -13,7 +13,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, Calendar, Percent, Repeat2 } from 'lucide-react';
-import { cn, formatInputNumber, parseInputString, formatResultNumber, formatPercentage } from '@/lib/utils';
+import { cn, formatInputNumber, parseInputString, formatResultNumber, formatPercentage } from '@/lib/utils'; // Import new helper
 
 interface CalculationStep {
   period: number;
@@ -43,6 +43,7 @@ const CompoundCalculator: React.FC = () => {
   const [annualRateError, setAnnualRateError] = useState<boolean>(false);
   const [yearsError, setYearsError] = useState<boolean>(false);
   const [additionalContributionError, setAdditionalContributionError] = useState<boolean>(false);
+
 
   const [result, setResult] = useState<number | null>(null);
   const [overallRateOfReturn, setOverallRateOfReturn] = useState<number | null>(null);
@@ -118,6 +119,7 @@ const CompoundCalculator: React.FC = () => {
           rateOfReturn = 0;
       }
 
+
       calculationSteps.push({
         period: i,
         startingBalance: startingBalance,
@@ -143,12 +145,16 @@ const CompoundCalculator: React.FC = () => {
     }
     setOverallRateOfReturn(overallReturn);
 
+
     setSteps(calculationSteps);
   };
 
   // Update input state and calculation state on change
   const handlePrincipalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    const oldValue = principalInput; // Use the current state value before update
+    const cursorPosition = e.target.selectionStart ?? 0;
+
     const cleanedValue = value.replace(/,/g, '');
     const formattedValue = formatInputNumber(cleanedValue, false); // No decimals
     const parsedValue = parseInputString(cleanedValue, false); // No decimals
@@ -157,14 +163,21 @@ const CompoundCalculator: React.FC = () => {
     setPrincipal(parsedValue);
     setPrincipalError(false);
 
-    // Set cursor to the end of the new formatted value
+    // Calculate new cursor position
+    const oldCleanedPrefix = oldValue.substring(0, cursorPosition).replace(/,/g, '');
+    const newCursorPosition = formatInputNumber(oldCleanedPrefix, false).length;
+
+
     requestAnimationFrame(() => {
-        e.target.setSelectionRange(formattedValue.length, formattedValue.length);
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
     });
   };
 
   const handleAnnualRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    const oldValue = annualRateInput; // Use the current state value before update
+    const cursorPosition = e.target.selectionStart ?? 0;
+
     const cleanedValue = value.replace(/,/g, '');
     const formattedValue = formatInputNumber(cleanedValue, true); // Allow decimals
     const parsedValue = parseInputString(cleanedValue, true); // Allow decimals
@@ -173,14 +186,21 @@ const CompoundCalculator: React.FC = () => {
     setAnnualRate(parsedValue);
     setAnnualRateError(false);
 
-    // Set cursor to the end of the new formatted value
+    // Calculate new cursor position
+    const oldCleanedPrefix = oldValue.substring(0, cursorPosition).replace(/,/g, '');
+    const newCursorPosition = formatInputNumber(oldCleanedPrefix, true).length; // Use allowDecimals=true
+
+
     requestAnimationFrame(() => {
-        e.target.setSelectionRange(formattedValue.length, formattedValue.length);
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
     });
   };
 
   const handleYearsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    const oldValue = yearsInput; // Use the current state value before update
+    const cursorPosition = e.target.selectionStart ?? 0;
+
     const cleanedValue = value.replace(/,/g, '');
     const formattedValue = formatInputNumber(cleanedValue, false); // No decimals
     const parsedValue = parseInputString(cleanedValue, false); // No decimals
@@ -189,14 +209,21 @@ const CompoundCalculator: React.FC = () => {
     setYears(parsedValue);
     setYearsError(false);
 
-    // Set cursor to the end of the new formatted value
+    // Calculate new cursor position
+    const oldCleanedPrefix = oldValue.substring(0, cursorPosition).replace(/,/g, '');
+    const newCursorPosition = formatInputNumber(oldCleanedPrefix, false).length;
+
+
     requestAnimationFrame(() => {
-        e.target.setSelectionRange(formattedValue.length, formattedValue.length);
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
     });
   };
 
   const handleAdditionalContributionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    const oldValue = additionalContributionInput; // Use the current state value before update
+    const cursorPosition = e.target.selectionStart ?? 0;
+
     const cleanedValue = value.replace(/,/g, '');
     const formattedValue = formatInputNumber(cleanedValue, false); // No decimals
     const parsedValue = parseInputString(cleanedValue, false); // No decimals
@@ -205,11 +232,16 @@ const CompoundCalculator: React.FC = () => {
     setAdditionalContribution(parsedValue);
     setAdditionalContributionError(false);
 
-    // Set cursor to the end of the new formatted value
+    // Calculate new cursor position
+    const oldCleanedPrefix = oldValue.substring(0, cursorPosition).replace(/,/g, '');
+    const newCursorPosition = formatInputNumber(oldCleanedPrefix, false).length;
+
+
     requestAnimationFrame(() => {
-        e.target.setSelectionRange(formattedValue.length, formattedValue.length);
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
     });
   };
+
 
   return (
     <div className="container mx-auto p-4 max-w-3xl">
@@ -310,6 +342,7 @@ const CompoundCalculator: React.FC = () => {
           {result !== null && (
             <div className="mt-6 space-y-4">
               <Separator className="bg-border" />
+              {/* Changed text-primary to text-primary-light */}
               <h3 className="text-xl font-semibold text-primary-light">계산 결과</h3>
               <div className="text-lg text-text">
                 <p>최종 금액: <span className="font-bold text-text">{formatResultNumber(result)}</span></p>
@@ -317,6 +350,7 @@ const CompoundCalculator: React.FC = () => {
               </div>
 
               <Separator className="bg-border" />
+              {/* Changed text-primary to text-primary-light */}
               <h3 className="text-xl font-semibold text-primary-light">계산 과정</h3>
               <div className="overflow-x-auto">
                 <Table>
