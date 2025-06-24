@@ -36,13 +36,13 @@ export const parseInputString = (value: string, allowDecimals: boolean = true): 
   return parsedValue;
 };
 
-export const formatResultNumber = (value: number | null, allowDecimals: boolean = false): string => {
+export const formatResultNumber = (value: number | null): string => {
   if (value === null || isNaN(value)) {
     return 'N/A';
   }
   // Format the number with commas and append '원' for Korean Won
-  // Use maximumFractionDigits to control decimal places
-  return `${value.toLocaleString('ko-KR', { maximumFractionDigits: allowDecimals ? 2 : 0 })}원`;
+  // Removed the "(금액)" suffix
+  return `${value.toLocaleString('ko-KR')}원`;
 };
 
 export const formatPercentage = (value: number | null): string => {

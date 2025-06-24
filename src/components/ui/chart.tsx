@@ -206,15 +206,14 @@ const ChartTooltipContent = React.forwardRef<
                     ) : (
                       !hideIndicator && (
                         <div
-                         className={cn(
+                          className={cn(
                             'shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]',
-                            indicator === 'dot' && 'h-2.5 w-2.5',
-                            indicator === 'line' && 'w-1',
-                            indicator === 'dashed' && 'w-0 border-[1.5px] border-dashed bg-transparent',
-                            nestLabel && indicator === 'dashed' && 'my-0.5'
+                            // Pass classes conditionally as strings, not in an object
+                            indicator === 'dot' ? 'h-2.5 w-2.5' : undefined,
+                            indicator === 'line' ? 'w-1' : undefined,
+                            indicator === 'dashed' ? 'w-0 border-[1.5px] border-dashed bg-transparent' : undefined,
+                            (nestLabel && indicator === 'dashed') ? 'my-0.5' : undefined
                           )}
-
-                          })}
                           style={
                             {
                               '--color-bg': indicatorColor,
